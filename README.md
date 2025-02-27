@@ -15,7 +15,7 @@ This application helps optimize pickup routes between depot locations and a milk
 
 ## Project Structure
 
-```
+```plaintext
 depot_routing/
 │-- app.py                 # Main application entry point
 │-- data_handler.py        # Handles file uploads and data processing
@@ -27,26 +27,30 @@ depot_routing/
 ## Installation
 
 1. Clone this repository:
-   ```
+
+```bash
    git clone <repository-url>
    cd depot_routing
    ```
 
-2. Create a virtual environment (optional but recommended):
-   ```
+1. Create a virtual environment (optional but recommended):
+
+   ```bash
    python -m venv .venv
    source .venv/bin/activate  # On Windows, use: .venv\Scripts\activate
    ```
 
-3. Install dependencies:
-   ```
+1. Install dependencies:
+
+   ```bash
    pip install -r requirements.txt
    ```
 
 ## Usage
 
 1. Run the application:
-   ```
+
+   ```bash
    streamlit run app.py
    ```
 
@@ -73,6 +77,7 @@ depot_routing/
 The Excel file should have two sheets:
 
 ### Depots Sheet
+
 | Included | Region | Depot Designation | Depot Address | Direct Shipment Cost |
 |----------|--------|-------------------|---------------|----------------------|
 | Y        | North  | BANK_NORTH        | 123 Main St   | 0.00                |
@@ -80,6 +85,7 @@ The Excel file should have two sheets:
 | N        | West   | DEPOT_WEST        | 789 Oak St    | 150.75              |
 
 ### Driving Times Sheet
+
 | Depot 1 Designation | Depot 2 Designation | Driving Time (minutes) |
 |---------------------|---------------------|------------------------|
 | BANK_NORTH          | DEPOT_EAST          | 45.5                   |
@@ -97,6 +103,7 @@ The optimization uses a mixed-integer linear programming model to:
    - Maximum number of routes
 
 The model ensures:
+
 - Each depot is either visited by a route or sends a direct shipment
 - Routes start and end at the bank
 - No subtours are created
