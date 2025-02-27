@@ -24,48 +24,48 @@ def optimize_routes(bank, depots, direct_costs, driving_times, max_driving_time,
     prob = pulp.LpProblem("Route_Optimization", pulp.LpMinimize)
     
     # Decision variables
-    # x[i] = 1 if depot i sends direct shipment, 0 otherwise
-    x = pulp.LpVariable.dicts("direct", depots, cat=pulp.LpBinary)
+    # direct_shipment[i] = 1 if depot i sends direct shipment, 0 otherwise
+    direct_shipment = pulp.LpVariable.dicts("direct", depots, cat=pulp.LpBinary)
     
-    # y[i,j] = 1 if we travel from depot i to depot j, 0 otherwise
+    # link[i,j] = 1 if we travel from depot i to depot j, 0 otherwise
     all_locations = [bank] + depots
-    y = pulp.LpVariable.dicts("route", [(i, j) for i in all_locations for j in all_locations if i != j], cat=pulp.LpBinary)
+    link = pulp.LpVariable.dicts("route", [(i, j) for i in all_locations for j in all_locations if i != j], cat=pulp.LpBinary)
     
     # u[i] is the position of depot i in the route (for subtour elimination)
     u = pulp.LpVariable.dicts("position", depots, lowBound=1, upBound=len(depots), cat=pulp.LpInteger)
     
     # Objective function: minimize total cost
     # Cost of direct shipments + cost of routing
-    objective = pulp.lpSum([direct_costs[i] * x[i] for i in depots]) + \
-                pulp.lpSum([driving_times.get((i, j), 0) * y[i, j] for i in all_locations for j in all_locations if i != j])
+    objective = pulp.lpSum([direct_costs[i] * direct_shipment[i] for i in depots]) + \
+                pulp.lpSum([driving_times.get((i, j), 0) * link[i, j] for i in all_locations for j in all_locations if i != j])
     prob += objective
     
     # Constraints
     
     # Each depot is either visited or sends direct shipment
     for i in depots:
-        prob += x[i] + pulp.lpSum([y[j, i] for j in all_locations if j != i]) == 1
+        prob += direct_shipment[i] + pulp.lpSum([link[j, i] for j in all_locations if j != i]) == 1
     
     # Flow conservation: if a depot is visited, we must leave it
     for i in depots:
-        prob += pulp.lpSum([y[i, j] for j in all_locations if j != i]) == pulp.lpSum([y[j, i] for j in all_locations if j != i])
+        prob += pulp.lpSum([link[i, j] for j in all_locations if j != i]) == pulp.lpSum([link[j, i] for j in all_locations if j != i])
     
     # The bank is left at most max_routes times
-    prob += pulp.lpSum([y[bank, j] for j in depots]) <= max_routes
+    prob += pulp.lpSum([link[bank, j] for j in depots]) <= max_routes
     
     # The bank is reached the same number of times it is left
-    prob += pulp.lpSum([y[bank, j] for j in depots]) == pulp.lpSum([y[j, bank] for j in depots])
+    prob += pulp.lpSum([link[bank, j] for j in depots]) == pulp.lpSum([link[j, bank] for j in depots])
     
     # Subtour elimination constraints (MTZ formulation)
     M = len(depots)
     for i in depots:
         for j in depots:
             if i != j:
-                prob += u[i] - u[j] + M * y[i, j] <= M - 1
+                prob += u[i] - u[j] + M * link[i, j] <= M - 1
     
     # Route time constraint
     # This is a simplification and may need to be refined for actual use
-    prob += pulp.lpSum([driving_times.get((i, j), 0) * y[i, j] for i in all_locations for j in all_locations if i != j]) <= max_driving_time
+    prob += pulp.lpSum([driving_times.get((i, j), 0) * link[i, j] for i in all_locations for j in all_locations if i != j]) <= max_driving_time
     
     # Solve the problem
     prob.solve(pulp.PULP_CBC_CMD())
@@ -75,7 +75,7 @@ def optimize_routes(bank, depots, direct_costs, driving_times, max_driving_time,
         raise Exception(f"Could not find an optimal solution. Status: {pulp.LpStatus[prob.status]}")
     
     # Extract results
-    direct_shipments = {i: x[i].value() > 0.5 for i in depots if x[i].value() > 0.5}
+    direct_shipments = {i: direct_shipment[i].value() > 0.5 for i in depots if direct_shipment[i].value() > 0.5}
     
     # Extract routes
     routes = []
@@ -83,7 +83,7 @@ def optimize_routes(bank, depots, direct_costs, driving_times, max_driving_time,
     
     # Find the starting depots from the bank
     for j in depots:
-        if y[bank, j].value() > 0.5:
+        if link[bank, j].value() > 0.5:
             current_routes.append([bank, j])
     
     # Complete each route
@@ -91,7 +91,7 @@ def optimize_routes(bank, depots, direct_costs, driving_times, max_driving_time,
         while route[-1] != bank:
             current = route[-1]
             for j in all_locations:
-                if j != current and y[current, j].value() > 0.5:
+                if j != current and link[current, j].value() > 0.5:
                     route.append(j)
                     break
         routes.append(route)
