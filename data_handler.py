@@ -38,7 +38,7 @@ def validate_data(depots_data, driving_times_data):
     Returns:
         Tuple containing (success, error_message)
     """
-    required_depot_columns = ["Included", "Region", "Depot Designation", "Depot Address", "Direct Shipment Cost"]
+    required_depot_columns = ["Included", "Region", "Depot Designation", "Depot Address", "Direct Shipment Cost", "Fixed Decision"]
     required_driving_times_columns = ["Depot 1 Designation", "Depot 2 Designation", "Driving Time (minutes)"]
     
     if not all(col in depots_data.columns for col in required_depot_columns):

@@ -20,6 +20,8 @@ def main():
         st.session_state.current_checkboxes = {}
     if 'current_costs' not in st.session_state:
         st.session_state.current_costs = {}
+    if 'current_fixed_decisions' not in st.session_state:
+        st.session_state.current_fixed_decisions = {}
     if 'driving_times' not in st.session_state:
         st.session_state.driving_times = {}
     if 'direct_costs' not in st.session_state:
@@ -49,6 +51,7 @@ def main():
                     included = True if row["Included"] == "Y" else False
                     st.session_state.current_checkboxes[idx] = included
                     st.session_state.current_costs[idx] = row["Direct Shipment Cost"]
+                    st.session_state.current_fixed_decisions[idx] = row["Fixed Decision"]
             
             st.success("File uploaded successfully!")
         else:

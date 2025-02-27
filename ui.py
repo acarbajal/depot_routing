@@ -17,7 +17,7 @@ def display_sidebar():
         Tuple of (max_driving_time, max_routes)
     """
     st.sidebar.header("Optimization Parameters")
-    max_driving_time = st.sidebar.number_input("Maximum Driving Time (hours)", min_value=1, max_value=24, value=6, step=0.01)
+    max_driving_time = st.sidebar.number_input("Maximum Driving Time (hours)", min_value=1, max_value=24, value=6, step=1)
     max_routes = st.sidebar.number_input("Maximum Number of Routes", min_value=1, max_value=10, value=1, step=1)
     
     return max_driving_time, max_routes
@@ -50,7 +50,7 @@ def display_depots_form():
         with form_container:
             
              # Create header row
-            col1, col2, col3, col4, col5 = st.columns([1, 2, 3, 3, 2])
+            col1, col2, col3, col4, col5, col6 = st.columns([1, 2, 3, 3, 2, 2])
             with col1:
                 st.write("**Include**")
             with col2:
@@ -61,16 +61,19 @@ def display_depots_form():
                 st.write("**Address**")
             with col5:
                 st.write("**Direct Shipping Cost**")
+            with col6:
+                st.write('**Fixed Decision**')
             
             # Create checkboxes and input fields
             for idx, row in edited_depots.iterrows():
                 current_checkbox = st.session_state.current_checkboxes.get(idx, False)
                 if st.session_state.show_all_depots or current_checkbox:
-                    col1, col2, col3, col4, col5 = st.columns([1, 2, 3, 3, 2])
+                    col1, col2, col3, col4, col5, col6 = st.columns([1, 2, 3, 3, 2, 2])
                     
                     with col1:
                         checkbox_value = st.checkbox(
-                            label="", 
+                            label="Included?",
+                            label_visibility = "hidden", 
                             value=current_checkbox, 
                             key=f"cb_{idx}"
                         )
@@ -87,12 +90,27 @@ def display_depots_form():
                     
                     with col5:
                         cost_value = st.number_input(
-                            "",
+                            label = "direct shipping cost",
+                            label_visibility = "hidden",
                             value=float(st.session_state.current_costs.get(idx, row["Direct Shipment Cost"])),
                             key=f"cost_{idx}",
                             step=0.01
                         )
                         st.session_state.current_costs[idx] = cost_value
+                    
+                    with col6:
+                        option_values = ['Not fixed', 'Ship to bank', 'Wait for pickup']
+                        
+                        current_fixed_decision = st.session_state.current_fixed_decisions.get(idx, 'Not fixed')
+
+                        fixed_decision_value = st.selectbox(
+                            label="fixed decision",
+                            label_visibility="hidden",
+                            options = option_values,
+                            index = option_values.index(current_fixed_decision),
+                            key=f"fixed_{idx}"
+                        )
+                        st.session_state.current_fixed_decisions[idx] = fixed_decision_value
         
         submitted = st.form_submit_button("Save Changes")
     
@@ -102,6 +120,7 @@ def display_depots_form():
             if idx < len(edited_depots):
                 edited_depots.at[idx, "Included"] = "Y" if st.session_state.current_checkboxes[idx] else "N"
                 edited_depots.at[idx, "Direct Shipment Cost"] = st.session_state.current_costs[idx]
+                edited_depots.at[idx, "Fixed Decision"] = st.session_state.current_fixed_decisions[idx]
         
         st.session_state.depots_data = edited_depots
         st.success("Changes saved successfully!")
