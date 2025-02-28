@@ -1,6 +1,6 @@
 import pulp
 
-def optimize_routes(bank, depots, direct_costs, driving_times, max_driving_time, max_routes):
+def optimize_routes(bank, depots, direct_costs, fixed_decisions, driving_times, max_driving_time, max_routes):
     """
     Optimize routes using PuLP.
     
@@ -8,6 +8,7 @@ def optimize_routes(bank, depots, direct_costs, driving_times, max_driving_time,
         bank: The designation of the bank depot
         depots: List of depot designations to consider
         direct_costs: Dictionary mapping depot designations to direct shipment costs
+        fixed_decisions: Dictionary mapping depot designations to fixed decisions made prior to the optimization
         driving_times: Dictionary mapping (depot1, depot2) tuples to driving times
         max_driving_time: Maximum allowed driving time in minutes
         max_routes: Maximum number of routes allowed
@@ -37,6 +38,16 @@ def optimize_routes(bank, depots, direct_costs, driving_times, max_driving_time,
     prob += objective
     
     # Constraints
+    
+    #Honor fixed decisions
+    for i in depots:
+        if fixed_decisions[i] == 'Ship to bank':
+            prob += direct_shipment[i] == 1
+        elif fixed_decisions[i] == 'Wait for pickup':
+            prob += direct_shipment[i] == 0
+        else: 
+            0
+        
     
     # Each depot is either visited or sends direct shipment
     for i in depots:

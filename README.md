@@ -108,6 +108,7 @@ The model ensures:
 - Routes start and end at the bank
 - No subtours are created
 - Time constraints are respected
+- Fixed decisions are honored
 
 ## Dependencies
 

@@ -73,6 +73,11 @@ def main():
             for idx, row in included_depots.iterrows():
                 direct_costs[row["Depot Designation"]] = st.session_state.current_costs[idx]
             
+            # Create a fixed decisions dictionary
+            fixed_decisions = {}
+            for idx, row in included_depots.iterrows():
+                fixed_decisions[row["Depot Designation"]] = st.session_state.current_fixed_decisions[idx]
+            
             # Create driving times dictionary
             driving_times = {}
             for idx, row in st.session_state.driving_times_data.iterrows():
@@ -81,8 +86,8 @@ def main():
                 time = float(row["Driving Time (minutes)"])
                 driving_times[(depot1, depot2)] = time
                 # Ensure symmetry if not already provided
-                if (depot2, depot1) not in driving_times:
-                    driving_times[(depot2, depot1)] = time
+                ##if (depot2, depot1) not in driving_times:
+                ##    driving_times[(depot2, depot1)] = time
             
             # Identify the bank (first depot in the list)
             bank = st.session_state.depots_data.iloc[0]["Depot Designation"]
@@ -104,6 +109,7 @@ def main():
                     bank,
                     included_depot_designations,
                     direct_costs,
+                    fixed_decisions,
                     driving_times,
                     max_driving_time * 60,  # Convert to minutes
                     max_routes
