@@ -153,46 +153,49 @@ def display_optimization_results():
     # Display routes in tables
     st.write("### Routes to visit depots:")
     
-    for i, route in enumerate(routes):
-        st.write(f"**Route {i+1}:**")
+    if routes:
+        for i, route in enumerate(routes):
+            st.write(f"**Route {i+1}:**")
+            
+            # Create route data with driving costs
+            route_data = []
+            total_driving_cost = 0
+            
+            for j in range(len(route)):
+                if j == 0:
+                    # First stop has no driving cost from previous
+                    route_data.append({
+                        "Depot Designation": route[j],
+                        "Driving Cost ($)": ""
+                    })
+                else:
+                    # Calculate driving cost from previous depot
+                    from_depot = route[j-1]
+                    to_depot = route[j]
+                    driving_cost = driving_times.get((from_depot, to_depot), 0)
+                    total_driving_cost += driving_cost
+                    
+                    route_data.append({
+                        "Depot Designation": to_depot,
+                        "Driving Cost ($)": f"{driving_cost:.2f}"
+                    })
+            
+            # Create and display the route table
+            route_df = pd.DataFrame(route_data)
+            st.table(route_df)
+            
+            # Calculate and display route time
+            route_time = 0
+            for j in range(len(route) - 1):
+                depot1 = route[j]
+                depot2 = route[j + 1]
+                if (depot1, depot2) in driving_times:
+                    route_time += driving_times[(depot1, depot2)]
+            
+            st.write(f"**Route {i+1} driving time:** {route_time:.2f} minutes ({route_time/60:.2f} hours)")
+            st.write(f"**Route {i+1} total driving cost:** ${total_driving_cost:.2f}")
+            st.write("---")
+    else:
+        st.write("No depots will be visited for pickups.")
         
-        # Create route data with driving costs
-        route_data = []
-        total_driving_cost = 0
-        
-        for j in range(len(route)):
-            if j == 0:
-                # First stop has no driving cost from previous
-                route_data.append({
-                    "Depot Designation": route[j],
-                    "Driving Cost ($)": ""
-                })
-            else:
-                # Calculate driving cost from previous depot
-                from_depot = route[j-1]
-                to_depot = route[j]
-                driving_cost = driving_times.get((from_depot, to_depot), 0)
-                total_driving_cost += driving_cost
-                
-                route_data.append({
-                    "Depot Designation": to_depot,
-                    "Driving Cost ($)": f"{driving_cost:.2f}"
-                })
-        
-        # Create and display the route table
-        route_df = pd.DataFrame(route_data)
-        st.table(route_df)
-        
-        # Calculate and display route time
-        route_time = 0
-        for j in range(len(route) - 1):
-            depot1 = route[j]
-            depot2 = route[j + 1]
-            if (depot1, depot2) in driving_times:
-                route_time += driving_times[(depot1, depot2)]
-        
-        st.write(f"**Route {i+1} driving time:** {route_time:.2f} minutes ({route_time/60:.2f} hours)")
-        st.write(f"**Route {i+1} total driving cost:** ${total_driving_cost:.2f}")
-        st.write("---")
-    
     st.write(f"### Overall total cost: ${total_cost:.2f}")
