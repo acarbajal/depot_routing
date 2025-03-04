@@ -24,17 +24,11 @@ def display_sidebar():
 
 def display_depots_form():
     """Display and handle the depots data form."""
+   
     # Toggle for showing all depots
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        if st.button("Show All Depots"):
-            st.session_state.show_all_depots = True
-    
-    with col2:
-        if st.button("Hide Unselected Depots"):
-            st.session_state.show_all_depots = False
-    
+    if st.button("Show All Depots"):
+        st.session_state.show_all_depots = True
+        
     # Display depots data with editable checkboxes
     st.subheader("Depots Data")
     
