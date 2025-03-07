@@ -17,7 +17,7 @@ def display_sidebar():
         Tuple of (max_driving_time, max_routes)
     """
     st.sidebar.header("Optimization Parameters")
-    max_driving_time = st.sidebar.number_input("Maximum Driving Time (hours)", min_value=1, max_value=24, value=6, step=1)
+    max_driving_time = st.sidebar.number_input("Maximum Driving Time (hours)", min_value=1.0, max_value=24.0, value=8.0, step=0.1)
     max_routes = st.sidebar.number_input("Maximum Number of Routes", min_value=1, max_value=10, value=1, step=1)
     
     return max_driving_time, max_routes

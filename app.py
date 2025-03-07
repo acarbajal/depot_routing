@@ -10,8 +10,8 @@ def main():
     # Application state initialization
     if 'depots_data' not in st.session_state:
         st.session_state.depots_data = None
-    if 'driving_times_data' not in st.session_state:
-        st.session_state.driving_times_data = None
+    if 'driving_info_data' not in st.session_state:
+        st.session_state.driving_info_data = None
     if 'show_all_depots' not in st.session_state:
         st.session_state.show_all_depots = False
     if 'optimization_results' not in st.session_state:
@@ -24,6 +24,8 @@ def main():
         st.session_state.current_fixed_decisions = {}
     if 'driving_times' not in st.session_state:
         st.session_state.driving_times = {}
+    if 'driving_distances' not in st.session_state:
+        st.session_state.driving_distances = {}
     if 'direct_costs' not in st.session_state:
         st.session_state.direct_costs = {}
 
@@ -33,16 +35,16 @@ def main():
     st.title("Route Optimization Application")
 
     # File uploader
-    uploaded_file = st.file_uploader("Upload Excel file with Depots and Driving Times", type=["xlsx"])
+    uploaded_file = st.file_uploader("Upload Excel file with Depots and Driving Information", type=["xlsx"])
 
     if uploaded_file is not None:
         # Read and validate Excel file
-        success, message, depots_data, driving_times_data = read_excel_data(uploaded_file)
+        success, message, depots_data, driving_info_data = read_excel_data(uploaded_file)
         
         if success:
             # Store the data in session state
             st.session_state.depots_data = depots_data
-            st.session_state.driving_times_data = driving_times_data
+            st.session_state.driving_info_data = driving_info_data
             
             # Initialize checkbox data from the Included column if not already initialized
             if not st.session_state.current_checkboxes:
@@ -57,7 +59,7 @@ def main():
         else:
             st.error(message)
 
-    if st.session_state.depots_data is not None and st.session_state.driving_times_data is not None:
+    if st.session_state.depots_data is not None and st.session_state.driving_info_data is not None:
         # Display the depots form
         display_depots_form()
         
@@ -80,14 +82,20 @@ def main():
             
             # Create driving times dictionary
             driving_times = {}
-            for idx, row in st.session_state.driving_times_data.iterrows():
+            for idx, row in st.session_state.driving_info_data.iterrows():
                 depot1 = row["Depot 1 Designation"]
                 depot2 = row["Depot 2 Designation"]
                 time = float(row["Driving Time (minutes)"])
                 driving_times[(depot1, depot2)] = time
-                # Ensure symmetry if not already provided
-                ##if (depot2, depot1) not in driving_times:
-                ##    driving_times[(depot2, depot1)] = time
+            
+            # Create driving distances dictionary
+            driving_distances = {}
+            for idx, row in st.session_state.driving_info_data.iterrows():
+                depot1 = row["Depot 1 Designation"]
+                depot2 = row["Depot 2 Designation"]
+                distance = float(row["Driving Distance (miles)"])
+                driving_distances[(depot1, depot2)] = distance
+
             
             # Identify the bank (first depot in the list)
             bank = st.session_state.depots_data.iloc[0]["Depot Designation"]
@@ -101,6 +109,7 @@ def main():
             
             # Store for displaying results
             st.session_state.driving_times = driving_times
+            st.session_state.driving_distances = driving_distances
             st.session_state.direct_costs = direct_costs
             
             # Perform optimization

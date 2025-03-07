@@ -14,37 +14,37 @@ def read_excel_data(uploaded_file):
     try:
         # Read the Excel file
         depots_data = pd.read_excel(uploaded_file, sheet_name="Depots")
-        driving_times_data = pd.read_excel(uploaded_file, sheet_name="Driving Times")
+        driving_info_data = pd.read_excel(uploaded_file, sheet_name="Driving Info")
         
         # Validate the data
-        validation_result = validate_data(depots_data, driving_times_data)
+        validation_result = validate_data(depots_data, driving_info_data)
         
         if validation_result[0]:
-            return True, "Data validated successfully", depots_data, driving_times_data
+            return True, "Data validated successfully", depots_data, driving_info_data
         else:
             return False, validation_result[1], None, None
             
     except Exception as e:
         return False, f"Error reading Excel file: {e}", None, None
 
-def validate_data(depots_data, driving_times_data):
+def validate_data(depots_data, driving_info_data):
     """
     Validate that the uploaded data contains all required columns.
     
     Args:
         depots_data: DataFrame containing depot information
-        driving_times_data: DataFrame containing driving times
+        driving_info_data: DataFrame containing driving times and distances
     
     Returns:
         Tuple containing (success, error_message)
     """
     required_depot_columns = ["Included", "Region", "Depot Designation", "Depot Address", "Direct Shipment Cost", "Fixed Decision"]
-    required_driving_times_columns = ["Depot 1 Designation", "Depot 2 Designation", "Driving Time (minutes)"]
+    required_driving_info_columns = ["Depot 1 Designation", "Depot 2 Designation", "Driving Time (minutes)", "Driving Distance (miles)"]
     
     if not all(col in depots_data.columns for col in required_depot_columns):
         return False, f"Depots tab must contain the following columns: {', '.join(required_depot_columns)}"
-    elif not all(col in driving_times_data.columns for col in required_driving_times_columns):
-        return False, f"Driving Times tab must contain the following columns: {', '.join(required_driving_times_columns)}"
+    elif not all(col in driving_info_data.columns for col in required_driving_info_columns):
+        return False, f"Driving Info tab must contain the following columns: {', '.join(required_driving_info_columns)}"
     
     return True, "Data validation successful"
 
