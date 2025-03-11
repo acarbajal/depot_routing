@@ -1,7 +1,7 @@
 import streamlit as st
 from data_handler import read_excel_data, validate_data
 from optimizer import optimize_routes
-from ui import setup_page_config, display_sidebar, display_depots_form, display_optimization_results
+from ui import setup_page_config, display_sidebar, display_depots_form, display_start_end_points, display_optimization_results
 
 def main():
     # Set up the page configuration
@@ -22,6 +22,10 @@ def main():
         st.session_state.current_costs = {}
     if 'current_fixed_decisions' not in st.session_state:
         st.session_state.current_fixed_decisions = {}
+    if 'current_start_point' not in st.session_state:
+        st.session_state.current_start_point = None
+    if 'current_end_point' not in st.session_state:
+        st.session_state.current_end_point = None
     if 'driving_times' not in st.session_state:
         st.session_state.driving_times = {}
     if 'driving_distances' not in st.session_state:
@@ -55,6 +59,11 @@ def main():
                     st.session_state.current_costs[idx] = row["Direct Shipment Cost"]
                     st.session_state.current_fixed_decisions[idx] = row["Fixed Decision"]
             
+            if not st.session_state.current_start_point:
+                st.session_state.current_start_point = depots_data.iloc[0]["Depot Designation"]
+            if not st.session_state.current_end_point:
+                st.session_state.current_end_point = depots_data.iloc[0]["Depot Designation"]
+            
             st.success("File uploaded successfully!")
         else:
             st.error(message)
@@ -63,12 +72,22 @@ def main():
         # Display the depots form
         display_depots_form()
         
+        # Get only the included depots (based on current checkboxes)
+        included_indices = [idx for idx, checked in st.session_state.current_checkboxes.items() if checked]
+        included_depots = st.session_state.depots_data.loc[included_indices]
+        
+        # Identify the bank (first depot in the list)
+        bank = st.session_state.depots_data.iloc[0]["Depot Designation"]
+            
+        # Get depot designations for included depots
+        included_depot_designations = included_depots["Depot Designation"].tolist()
+        
+        display_start_end_points(included_depot_designations)
+        
+        
         # Button to start optimization
         if st.button("Optimize Routes"):
             # Prepare data for optimization
-            # Get only the included depots (based on current checkboxes)
-            included_indices = [idx for idx, checked in st.session_state.current_checkboxes.items() if checked]
-            included_depots = st.session_state.depots_data.loc[included_indices]
             
             # Create cost dictionary
             direct_costs = {}
@@ -97,13 +116,7 @@ def main():
                 driving_distances[(depot1, depot2)] = distance
 
             
-            # Identify the bank (first depot in the list)
-            bank = st.session_state.depots_data.iloc[0]["Depot Designation"]
-            
-            # Get depot designations for included depots
-            included_depot_designations = included_depots["Depot Designation"].tolist()
-            
-            # Remove bank from list if it's there, as we handle it separately
+            # Remove bank from list if it's there, as we handle it separately for optimization
             if bank in included_depot_designations:
                 included_depot_designations.remove(bank)
             
@@ -117,6 +130,8 @@ def main():
                 results = optimize_routes(
                     bank,
                     included_depot_designations,
+                    #st.session_state.start_point,
+                    #st.session_state.end_point,
                     direct_costs,
                     fixed_decisions,
                     driving_times,

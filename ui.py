@@ -20,6 +20,7 @@ def display_sidebar():
     max_driving_time = st.sidebar.number_input("Maximum Driving Time (hours)", min_value=1.0, max_value=24.0, value=8.0, step=0.1)
     max_routes = st.sidebar.number_input("Maximum Number of Routes", min_value=1, max_value=10, value=1, step=1)
     
+    
     return max_driving_time, max_routes
 
 def display_depots_form():
@@ -106,7 +107,7 @@ def display_depots_form():
                         )
                         st.session_state.current_fixed_decisions[idx] = fixed_decision_value
         
-        submitted = st.form_submit_button("Save Changes")
+        submitted = st.form_submit_button("Save Depot Information Edits")
     
     if submitted:
         # Update the dataframe with the new values
@@ -118,6 +119,45 @@ def display_depots_form():
         
         st.session_state.depots_data = edited_depots
         st.success("Changes saved successfully!")
+
+
+def display_start_end_points(included_depot_designations):
+    """Display start and end points for the route."""
+    st.subheader("Start and End Points for the Route")
+    
+    # Display the data in a form
+    with st.form("start_end_points_form"):
+        # Create a container for the form fields
+        form_container = st.container()
+        
+        #Start point selection
+        current_start_point = st.session_state.current_start_point
+        start_point = st.selectbox(
+            label="**Start point**",
+            label_visibility="visible",
+            options = included_depot_designations,
+            index = 0,
+            key='start_point'
+        )
+        
+        #End point selection
+        current_end_point = st.session_state.current_end_point
+        end_point = st.selectbox(
+            label="**End point**",
+            label_visibility="visible",
+            options = included_depot_designations,
+            index = 0,
+            key='end_point'
+        )
+        
+        submitted = st.form_submit_button("Save Start and End Points")
+    
+    if submitted:
+        st.session_state.current_start_point = start_point
+        st.session_state.current_end_point = end_point
+        st.success("Changes saved successfully!")
+ 
+
 
 def display_optimization_results():
     """Display optimization results."""
