@@ -125,13 +125,14 @@ def main():
             st.session_state.driving_distances = driving_distances
             st.session_state.direct_costs = direct_costs
             
+            
             # Perform optimization
             try:
                 results = optimize_routes(
                     bank,
                     included_depot_designations,
-                    #st.session_state.start_point,
-                    #st.session_state.end_point,
+                    st.session_state.start_point,
+                    st.session_state.end_point,
                     direct_costs,
                     fixed_decisions,
                     driving_times,

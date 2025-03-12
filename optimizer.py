@@ -1,12 +1,14 @@
 import pulp
 
-def optimize_routes(bank, depots, direct_costs, fixed_decisions, driving_times, max_driving_time, max_routes):
+def optimize_routes(bank, depots, start_point, end_point, direct_costs, fixed_decisions, driving_times, max_driving_time, max_routes):
     """
     Optimize routes using PuLP.
     
     Args:
         bank: The designation of the bank depot
         depots: List of depot designations to consider
+        start_point: The designation of the chosen start point
+        end_point: The designation of the chosen end point
         direct_costs: Dictionary mapping depot designations to direct shipment costs
         fixed_decisions: Dictionary mapping depot designations to fixed decisions made prior to the optimization
         driving_times: Dictionary mapping (depot1, depot2) tuples to driving times
@@ -41,7 +43,7 @@ def optimize_routes(bank, depots, direct_costs, fixed_decisions, driving_times, 
     
     #Honor fixed decisions
     for i in depots:
-        if fixed_decisions[i] == 'Ship to bank':
+        if fixed_decisions[i] == 'Ship to bank' and i!=start_point and i!=end_point:
             prob += direct_shipment[i] == 1
         elif fixed_decisions[i] == 'Wait for pickup':
             prob += direct_shipment[i] == 0
@@ -63,6 +65,15 @@ def optimize_routes(bank, depots, direct_costs, fixed_decisions, driving_times, 
     
     # The bank is reached the same number of times it is left
     prob += pulp.lpSum([link[bank, j, k] for j in depots for k in all_routes]) == pulp.lpSum([link[j, bank, k] for j in depots for k in all_routes])
+    
+    # Enforcing a "start_point" that is not the bank
+    if start_point != bank:
+        prob += pulp.lpSum([link[bank, start_point, k] for k in all_routes]) == 1
+    
+    # Enforcing an "end_point" that is not the bank
+    if end_point != bank:
+        prob += pulp.lpSum([link[end_point, bank, k] for k in all_routes]) == 1
+    
     
     # Subtour elimination constraints (MTZ formulation)
     M = len(depots)
@@ -93,13 +104,14 @@ def optimize_routes(bank, depots, direct_costs, fixed_decisions, driving_times, 
     
     # Find the starting depots from the bank
     for j in depots:
-        for k in all_routes:
-            if link[bank, j, k].value() > 0.5:
-                current_routes.append([bank, j])
-    
+        if j != start_point:
+            for k in all_routes:
+                if link[start_point, j, k].value() > 0.5:
+                    current_routes.append([start_point, j])
+        
     # Complete each route
     for route in current_routes:
-        while route[-1] != bank:
+        while route[-1] != end_point:
             current = route[-1]
             for j in all_locations:
                 for k in all_routes:
