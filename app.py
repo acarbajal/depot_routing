@@ -34,7 +34,7 @@ def main():
         st.session_state.direct_costs = {}
 
     # Sidebar for parameters
-    max_driving_time, max_routes = display_sidebar()
+    max_driving_time, max_routes, gas_cost, staff_cost = display_sidebar()
 
     st.title("Route Optimization Application")
 
@@ -86,7 +86,7 @@ def main():
         
         
         # Button to start optimization
-        if st.button("Optimize Routes"):
+        if st.button("Optimize Route"):
             # Prepare data for optimization
             
             # Create cost dictionary
@@ -136,16 +136,19 @@ def main():
                     direct_costs,
                     fixed_decisions,
                     driving_times,
+                    driving_distances,
                     max_driving_time * 60,  # Convert to minutes
-                    max_routes
-                )
+                    max_routes,
+                    gas_cost,
+                    staff_cost / 60 # Convert to $/minute
+                    )
                 st.session_state.optimization_results = results
             except Exception as e:
                 st.error(f"Optimization error: {e}")
         
         # Display optimization results
         if st.session_state.optimization_results is not None:
-            display_optimization_results()
+            display_optimization_results(gas_cost, staff_cost/60)
 
 # Run the app
 if __name__ == "__main__":

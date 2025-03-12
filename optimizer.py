@@ -1,6 +1,6 @@
 import pulp
 
-def optimize_routes(bank, depots, start_point, end_point, direct_costs, fixed_decisions, driving_times, max_driving_time, max_routes):
+def optimize_routes(bank, depots, start_point, end_point, direct_costs, fixed_decisions, driving_times, driving_distances, max_driving_time, max_routes, distance_rate, time_rate):
     """
     Optimize routes using PuLP.
     
@@ -12,8 +12,11 @@ def optimize_routes(bank, depots, start_point, end_point, direct_costs, fixed_de
         direct_costs: Dictionary mapping depot designations to direct shipment costs
         fixed_decisions: Dictionary mapping depot designations to fixed decisions made prior to the optimization
         driving_times: Dictionary mapping (depot1, depot2) tuples to driving times
+        driving_distances: Dictionary mapping (depot1, depot2) tuples to driving distances
         max_driving_time: Maximum allowed driving time in minutes
         max_routes: Maximum number of routes allowed
+        distance_rate: Distance cost ($/mile) for the created route
+        time_rate: Time cost ($/minute) for the created route
     
     Returns:
         Dictionary with optimization results
@@ -34,9 +37,9 @@ def optimize_routes(bank, depots, start_point, end_point, direct_costs, fixed_de
     u = pulp.LpVariable.dicts("position", [(i,k) for i in depots for k in all_routes], lowBound=1, upBound=len(depots), cat=pulp.LpInteger)
     
     # Objective function: minimize total cost
-    # Cost of direct shipments + cost of routing
+    # Cost of direct shipments + cost of routing: time + distance
     objective = pulp.lpSum([direct_costs[i] * direct_shipment[i] for i in depots]) + \
-                pulp.lpSum([driving_times.get((i, j), 0) * link[i, j, k] for i in all_locations for j in all_locations for k in all_routes if i != j])
+                pulp.lpSum([( driving_times.get((i, j), 0)*time_rate + driving_distances.get((i,j), 0)*distance_rate) * link[i, j, k] for i in all_locations for j in all_locations for k in all_routes if i != j])
     prob += objective
     
     # Constraints

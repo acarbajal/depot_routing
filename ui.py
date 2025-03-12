@@ -17,11 +17,20 @@ def display_sidebar():
         Tuple of (max_driving_time, max_routes)
     """
     st.sidebar.header("Optimization Parameters")
-    max_driving_time = st.sidebar.number_input("Maximum Driving Time (hours)", min_value=1.0, max_value=24.0, value=8.0, step=0.1)
-    max_routes = st.sidebar.number_input("Maximum Number of Routes", min_value=1, max_value=10, value=1, step=1)
+    max_driving_time = st.sidebar.number_input("Maximum Driving Time (hours)", min_value=1.0, value=8.0, step=0.1)
+    #max_routes = st.sidebar.number_input("Maximum Number of Routes", min_value=1, max_value=10, value=1, step=1)
+    #Fixing max routes to 1 for now, since allowing the specification of start and end points significantly complicates the logic for more than 1 route
+    max_routes = 1
+    gas_price_per_gallon = st.sidebar.number_input("Gas Price ($/gallon)", min_value=0.0, value = 2.7, step = 0.01)
+    fuel_efficiency = st.sidebar.number_input("Fuel Efficiency (miles/gallon)", min_value = 0.01, value = 21.0, step = 0.01) 
     
+    gas_cost = gas_price_per_gallon/fuel_efficiency
+    st.sidebar.write(f"Gas Cost Per Mile ($/mile) = {gas_cost:.2f}")
     
-    return max_driving_time, max_routes
+    staff_cost = st.sidebar.number_input("Staff Cost ($/hr)", min_value = 0.0, value = 7.25, step=0.01)
+    
+    return max_driving_time, max_routes, gas_cost, staff_cost
+
 
 def display_depots_form():
     """Display and handle the depots data form."""
@@ -159,15 +168,17 @@ def display_start_end_points(included_depot_designations):
  
 
 
-def display_optimization_results():
+def display_optimization_results(distance_rate, time_rate):
     """Display optimization results."""
     st.subheader("Optimization Results")
     
     direct_shipments = st.session_state.optimization_results["direct_shipments"]
     routes = st.session_state.optimization_results["routes"]
-    total_cost = st.session_state.optimization_results["total_cost"]
     driving_times = st.session_state.driving_times
+    driving_distances = st.session_state.driving_distances
     direct_costs = st.session_state.direct_costs
+    
+    total_cost = 0
     
     # Display direct shipments in a table
     st.write("### Depots that will send direct shipments:")
@@ -176,13 +187,16 @@ def display_optimization_results():
             "Depot Designation": list(direct_shipments.keys()),
             "Direct Shipment Cost ($)": [direct_costs[depot] for depot in direct_shipments]
         }
-        direct_df = pd.DataFrame(direct_data)
-        st.table(direct_df)
+        direct_df = pd.DataFrame(direct_data).round(2)
+        st.dataframe(direct_df, hide_index=True)
         
         direct_total = sum(direct_costs[depot] for depot in direct_shipments)
         st.write(f"**Total direct shipment cost:** ${direct_total:.2f}")
+        total_cost += direct_total
     else:
         st.write("No depots will send direct shipments.")
+    
+    
     
     # Display routes in tables
     st.write("### Routes to visit depots:")
@@ -193,42 +207,51 @@ def display_optimization_results():
             
             # Create route data with driving costs
             route_data = []
-            total_driving_cost = 0
+            route_driving_time = 0
+            route_driving_distance = 0
+            route_driving_cost = 0
+            stop = 1
             
             for j in range(len(route)):
                 if j == 0:
                     # First stop has no driving cost from previous
                     route_data.append({
+                        "Stop #": stop,
                         "Depot Designation": route[j],
+                        "Driving Time (min)": "",
+                        "Driving Distance (miles)": "",
                         "Driving Cost ($)": ""
                     })
                 else:
                     # Calculate driving cost from previous depot
                     from_depot = route[j-1]
                     to_depot = route[j]
-                    driving_cost = driving_times.get((from_depot, to_depot), 0)
-                    total_driving_cost += driving_cost
+                    driving_time = driving_times.get((from_depot, to_depot), 0)*time_rate
+                    route_driving_time += driving_time
+                    driving_distance = driving_distances.get((from_depot, to_depot), 0)*distance_rate
+                    route_driving_distance += driving_distance
+                    driving_cost = driving_time*time_rate + driving_distance*distance_rate 
+                    route_driving_cost += driving_cost
+                    stop += 1
                     
                     route_data.append({
+                        "Stop #": stop,
                         "Depot Designation": to_depot,
+                        "Driving Time (min)": f"{driving_time:.2f}",
+                        "Driving Distance (miles)": f"{driving_distance:.2f}",
                         "Driving Cost ($)": f"{driving_cost:.2f}"
                     })
             
             # Create and display the route table
             route_df = pd.DataFrame(route_data)
-            st.table(route_df)
+            st.dataframe(route_df, hide_index=True)
             
-            # Calculate and display route time
-            route_time = 0
-            for j in range(len(route) - 1):
-                depot1 = route[j]
-                depot2 = route[j + 1]
-                if (depot1, depot2) in driving_times:
-                    route_time += driving_times[(depot1, depot2)]
             
-            st.write(f"**Route {i+1} driving time:** {route_time:.2f} minutes ({route_time/60:.2f} hours)")
-            st.write(f"**Route {i+1} total driving cost:** ${total_driving_cost:.2f}")
+            st.write(f"**Route {i+1} time:** {route_driving_time:.2f} minutes ({route_driving_time/60:.2f} hours)")
+            st.write(f"**Route {i+1} distance:** {route_driving_distance:.2f} miles")
+            st.write(f"**Route {i+1} cost:** ${route_driving_cost:.2f}")
             st.write("---")
+            total_cost += route_driving_cost
     else:
         st.write("No depots will be visited for pickups.")
         
